@@ -1,34 +1,33 @@
-﻿using DataLib.Model;
+﻿using DataLib._Util;
+using DataLib.Model;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
 
 namespace DataLib.Data;
 
-public class TestCategoryBase
+public class TestCategoryBase : ConnectionUtil
 {
-    private string? GetConnectionString()
-    {
-        // Build the configuration
-        var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
-
-        var configuration = builder.Build();
-
-        // Define your connection string
-        string? connString = configuration.GetConnectionString("PostgresqlConnection");
-        return connString;
-    }
     protected long GetTestCategoryCountBase()
     {
         long result = 0;
+        
         using var connection = new NpgsqlConnection(GetConnectionString());
-        connection.Open();
-        string? query = "SELECT COUNT(_id) FROM test_categories";
-        using var command = new NpgsqlCommand(query, connection);
-        result = (long)command.ExecuteScalar();
-        connection.Close();
+        try
+        {
+            connection.Open();
+        
+            string? query = "SELECT COUNT(_id) FROM test_categories";
+            using var command = new NpgsqlCommand(query, connection);
+            result = (long)command.ExecuteScalar();
+            connection.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            connection.Close();
+        }
+       
         return result;
     }
     protected List<TestCategoryDTO> GetTestCategoriesBase(
